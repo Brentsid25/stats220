@@ -22,6 +22,7 @@ My friends always laugh at how I behave differently in the photos compared with 
 
 ### My meme
 
+![meme](my_meme.png)
 
 ### R code I used to create this meme
 ---
