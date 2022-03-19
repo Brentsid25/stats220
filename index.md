@@ -64,7 +64,7 @@ top <- image_append(v1)%>%image_border("#e6f2ff", "10x10")
 btm <- image_append(v2)%>%image_border("#e6f2ff", "10x10")
 v<- c(top,btm)
 meme <- image_append(v,stack = TRUE)%>%
-  image_scale(300)%>%
+  image_scale(500)%>%
   image_border("#e6f2ff", "10x10")
 image_write(meme, "my_meme.png")
 ```
