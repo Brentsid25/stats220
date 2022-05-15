@@ -1,0 +1,107 @@
+---
+title: "Assignment 4"
+author: "Brent GUO"
+date: "14/05/2022"
+output: 
+  html_document: 
+    theme: journal
+    highlight: textmate
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, error = FALSE)
+library(tidyverse)
+library(jsonlite)
+library(gganimate)
+```
+
+```{css}
+h2{font-weight: bold;}
+body{
+  background-color: #e6f2ff;
+}
+```
+![](https://raw.githubusercontent.com/Brentsid25/stats220/0d0b99b74a844daef30858cef663e8ceea5e94e6/header.jpg)
+
+### Group VS Non-Group Performers
+
+```{r}
+song_data <- fromJSON("spotify.json")
+```
+
+I love listening to Kpop, thus I chose this **Kpop 2020 Hits** from Spotify as my database. Idol Groups went viral a couple of years ago, I am interested in investigating if Idol Groups are still popular in 2022 on Spotify. And I would also love to find out for those `r nrow(song_data)` top hits on the chart 2022, which year they were released.
+
+I used `glimpse()` to go through all the variables. As I am interested in if Idol groups are still popular, I extract `track_genre`, `track_popularity` to investigate. I used `case_when` and  `str_det` to identify if the track is performed by a Boy Idol Group or Girl Idol Group or not and a new variable `kpop_group` was then created.
+
+I used `aes()` to set the x-axis as the track_popularity and y_axis as those three performance types - Boy Group, Girl Group and Others. `geom_boxplot` and `geom_jitter` was used to set create the boxplot and scatter plot at the same time. I used these two plots because, they showed the overall spread of the scatter and, at the same time, the box plot shows the quartile distribution. A vline was added to show the overall mean popularity for all tracks on the chart. `labs()` is used to set the labels, captions and titles for the plot.
+
+
+```{r}
+kgroup_data <- song_data %>%
+  mutate(kpop_group = case_when(
+    str_detect(artist_genre, "boy group") ~ "Boys' Group",
+    str_detect(artist_genre, "girl group") ~ "Girls' Group",
+    TRUE ~ "Others")) %>%
+  mutate(mean_popularity = mean(track_popularity, na.rm = TRUE))
+
+p1 <- ggplot(kgroup_data) +
+  geom_boxplot(aes(x= track_popularity, 
+             y = kpop_group,
+             fill = kpop_group), alpha = 0.3) +
+  geom_jitter(aes(x= track_popularity, 
+             y = kpop_group , 
+             color = kpop_group),
+             height = 0.2) +
+  geom_vline(aes(xintercept=mean_popularity), 
+             linetype = 2, colour = "#999999",
+             size = 1) +
+  labs(title = "Kpop 2022 hits - Group VS Non-Group",
+       x = "Popularity",
+       y = "Perfomer types",
+       caption = "Data source: Spotify") + 
+  theme(panel.background = element_rect(fill = "#f2f2f2")) + 
+  guides(color = "none", fill = "none")
+
+my_colour <- c("#4da6ff", "#ff9900", "#59b300")
+p1 + scale_colour_manual(values = my_colour) + 
+  scale_fill_manual(values = my_colour) + 
+  scale_x_continuous(breaks = seq(0,80,10))
+```
+
+From the plot above, we can see the median popular score for Girls' Group remains the highest at around 65, while Boys' Group and Other performers having the similar medians sitting at around 56. So I can conclude that Girl Group remains popular among `r nrow(song_data)` hits on the chart 2022.
+
+### Number of tracks each year by groups
+Secondly, I am interested in which year those tracks are released on the chart. Thus, I used to create the numeric variable `released_year`. 
+`facet()` was used to separate three performance types in to three different plots. `transition_reveal` was used to make the plot an animation. 
+
+
+```{r}
+year_data <- kgroup_data %>%
+  mutate(year_released = release_date %>% str_sub(1, 4) %>%
+           parse_number())
+
+p2_data <- year_data %>%
+  select(kpop_group, year_released) %>%
+  group_by(year_released, kpop_group) %>%
+  count()
+
+p2 <- p2_data%>%
+  ggplot(aes(x = year_released, y = n, colour = kpop_group))+
+  geom_line() +
+  facet_wrap(vars(kpop_group))+
+  labs(title = "Kpop 2022 hits - Number of Songs Each Year by Vroups",
+       x = "Year",
+       y = "Number of songs",
+       caption = "Data source: Spotify") + 
+  theme(panel.background = element_rect(fill = "#f2f2f2")) + 
+  guides(color = "none", fill = "none")
+
+oldest_song <- year_data%>%
+  filter(year_released == 2016)
+p2 + transition_reveal(year_released)
+
+```
+From the animation, it is not surprising that most of the songs on Kpop Hits 2022 were released in the year of 2020 and 2021. The oldest song `r oldest_song$track_name` performed by `r oldest_song$artist_name` is released in 2016.
+
+### Conclusion
+In this assignment, I have tried to use most of the techniques that were covered in the lab and lectures. However, when I was trying to make my plot meaningful and interesting, I found the chart i used for my database is actually quite specific in terms of language, released year tempo and danceability. Therefore I realise that I would need to make my database in good variety in the future so as to make my report more meaningful.
